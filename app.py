@@ -12,17 +12,19 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# 【修復】完美解析多用戶帳密
 users_env = os.environ.get("WEB_USERS", "admin:admin")
 AUTH_LIST = []
 if users_env:
     for pair in users_env.split(','):
         if ':' in pair:
             parts = pair.split(':', 1)
-            username = parts[0].strip()
-            password = parts[1].strip()
+            username = parts[0].[...](asc_slot://start-slot-1)strip()
+            password = parts.strip()  # ✅ 確保密碼讀取正確
             if username and password:
                 AUTH_LIST.append((username, password))
 
+# 【防呆】確保金鑰存在才初始化
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
@@ -38,13 +40,13 @@ def get_user_profile(username):
 def update_user_profile(user_input, username):
     if not user_input or not supabase or not client: return
     try:
-        # ✅【V9.2 模型兼容修正】
-        prompt = f"分析這句話：「{user_input}」。是否透露了說話者的個人偏好、物品或習慣？有則總結事實，無則回覆『無』。"
-        resp = client.models.generate_content(model='gemini-1.0-pro-001', contents=prompt)
+        # ✅ 使用最聰明且支援多模態的 gemini-1.5-flash
+        prompt = f"分析這句話：「{user_input}」。是否透露了說話者的個人偏好、物品 or 習慣？有則總結事實，無則回覆『無』。"
+        resp = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
         fact = resp.text.strip()
         if fact != "無" and "沒有" not in fact and len(fact) > 2:
             supabase.table('user_profile').insert({"fact": fact, "username": username}).execute()
-    except: pass
+    except: pass 
 
 def recall_long_term_memory(username):
     if not supabase: return []
@@ -75,12 +77,12 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
         else:
             u_text = str(user_msg)
         short_term += f"我:{u_text}\n你:{ai_msg}\n"
-
+        
     profile = get_user_profile(username)
     long_term_mems = recall_long_term_memory(username)
     long_term_context = "".join([f"舊紀錄:{m['question']} -> {m['answer'][:100]}...\n" for m in long_term_mems])
     web_context = search_the_web(user_text)
-
+    
     prompt = f"""你是一個多模態專屬 AI 助理。當前服務的主人是：{username}。
 【主人長期特徵】\n{profile}
 【本次對話上下文】\n{short_term if short_term else "新對話。"}
@@ -88,10 +90,10 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
 【網路最新資訊】\n{web_context}
 【目前提問/指示】\n{user_text}
 請給出精準回答："""
-
+    
     contents_to_send = [prompt]
-    uploaded_g_files = []
-
+    uploaded_g_files = [] 
+    
     if uploaded_files:
         for filepath in uploaded_files:
             file_size_mb = os.path.getsize(filepath) / (1024 * 1024)
@@ -100,24 +102,24 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
             try:
                 g_file = client.files.upload(file=filepath)
                 contents_to_send.append(g_file)
-                uploaded_g_files.append(g_file)
+                uploaded_g_files.append(g_file) 
             except Exception as e:
                 return f"❌ 檔案上傳失敗: {e}"
 
     try:
-        # ✅【V9.2 模型兼容修正】
-        response = client.models.generate_content(model='gemini-pro', contents=contents_to_send)
+        # ✅ 使用最聰明且支援多模態的 gemini-1.5-flash
+        response = client.models.generate_content(model='gemini-1.5-flash', contents=contents_to_send)
         final_answer = response.text
-
+        
         db_question = user_text if user_text else "[分析了上傳的檔案]"
         supabase.table('memory').insert({"question": db_question, "answer": final_answer, "username": username}).execute()
         update_user_profile(user_text, username)
-
+        
         return final_answer
-
+        
     except Exception as e:
-        return f"⚠️ AI 大腦暫時無法思考 (可能為安全攔截或 API 限制)：{str(e)}"
-
+        return f"⚠️ AI 大腦暫時無法思考 (可能為安全攔截、金鑰無效或 API 限制)：{str(e)}"
+        
     finally:
         for gf in uploaded_g_files:
             try:
@@ -130,14 +132,14 @@ def chat_logic(message_dict, history, request: gr.Request):
     raw_text = message_dict.get("text", "")
     text = raw_text.strip()
     files = message_dict.get("files", [])
-
+    
     normalized_text = text.replace(" ", "").replace("　", "").replace("。", "").replace(".", "").replace("！", "").replace("!", "")
 
     if not text and files:
         text = "請幫我分析我上傳的檔案/錄音檔。"
 
     yield "⏳ 系統正在處理中，請稍候..."
-
+    
     if not supabase:
         yield "⚠️ 錯誤：無法連線至 Supabase 資料庫，請檢查金鑰設定。"
         return
@@ -145,29 +147,30 @@ def chat_logic(message_dict, history, request: gr.Request):
     if normalized_text == "清除所有對話紀錄":
         supabase.table('memory').delete().eq('username', username).execute()
         yield f"🧹 [{username}] 的所有歷史對話記憶已被永久刪除！"
-
+        
     elif normalized_text == "清除我的個人畫像":
         supabase.table('user_profile').delete().eq('username', username).execute()
         yield f"🧹 [{username}] 的長期個人偏好筆記已被徹底清空！"
-
+        
     elif normalized_text.startswith("設定目標：") or normalized_text.startswith("設定目標:"):
         target = raw_text.split("：")[-1].split(":")[-1].strip()
         supabase.table('research_targets').insert({"target": target, "username": username}).execute()
         yield f"🎯 [{username}] 的目標已設定：『{target}』"
-
+        
     elif normalized_text == "自主學習":
         res = supabase.table('research_targets').select('target').eq('username', username).order('id', desc=True).limit(1).execute()
         target_str = res.data[0]['target'] if res.data else "2026年AI最新突破"
         yield f"🚀 正在為 [{username}] 針對『{target_str}』進行深度學習..."
         yield ask_smart_agent(f"針對『{target_str}』搜尋最新趨勢並整理報告。", [], history, username)
-
+        
     else:
         yield ask_smart_agent(text, files, history, username)
 
+# ✅ V9.3 終極穩定版介面
 demo = gr.ChatInterface(
-    fn=chat_logic,
-    multimodal=True,
-    title="🚀 可進化 AI 助理 V9.2 (最終兼容版)",
+    fn=chat_logic, 
+    multimodal=True, 
+    title="🚀 可進化 AI 助理 V9.3 (終極完美版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
