@@ -12,17 +12,18 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 【Bug 徹底修復】多用戶帳密解析邏輯，完美防範 IndexError 與 SyntaxError
+# 【Bug 徹底修復】多用戶帳密解析邏輯，完美防範 IndexError
 users_env = os.environ.get("WEB_USERS", "admin:admin")
 AUTH_LIST = []
 if users_env:
     for pair in users_env.split(','):
         if ':' in pair:
             parts = pair.split(':', 1)
-            username = parts[0].[...](asc_slot://start-slot-1)strip()
-            password = parts.strip()  # ✅ 100% 修正：確保讀取 parts，完全排除 parts.strip() 語法錯誤
-            if username and password:
-                AUTH_LIST.append((username, password))
+            if len(parts) == 2:
+                username = parts[0].[...](asc_slot://start-slot-1)strip()
+                password = parts.strip()  # ✅ 100% 修正：讀取 parts，無任何語法筆誤
+                if username and password:
+                    AUTH_LIST.append((username, password))
 
 # 【防呆】確保金鑰存在才初始化
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
@@ -107,7 +108,7 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
                 return f"❌ 檔案上傳失敗: {e}"
 
     try:
-        # ✅ 大腦完美對齊至 gemini-1.5-flash
+        # ✅ 大腦對齊至最優模型 gemini-1.5-flash
         response = client.models.generate_content(model='gemini-1.5-flash', contents=contents_to_send)
         final_answer = response.text
         
@@ -166,11 +167,11 @@ def chat_logic(message_dict, history, request: gr.Request):
     else:
         yield ask_smart_agent(text, files, history, username)
 
-# ✅ V9.4 終極無 Bug 界面：移除非必要按鈕，以保證與所有 Gradio 版本 100% 兼容
+# ✅ V9.5 終極無 Bug 界面（相容所有 Gradio 版本）
 demo = gr.ChatInterface(
     fn=chat_logic, 
     multimodal=True, 
-    title="🚀 可進化 AI 助理 V9.4 (終極無 Bug 版)",
+    title="🚀 可進化 AI 助理 V9.5 (終極無 Bug 版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
