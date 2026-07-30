@@ -167,11 +167,11 @@ def chat_logic(message_dict, history, request: gr.Request):
     else:
         yield ask_smart_agent(text, files, history, username)
 
-# ✅ V9.6 終極無 Bug 界面（相容所有 Gradio 版本）
+# ✅ V9.7 終極無 Bug 界面（相容所有 Gradio 版本）
 demo = gr.ChatInterface(
     fn=chat_logic, 
     multimodal=True, 
-    title="🚀 可進化 AI 助理 V9.6 (終極完美正式版)",
+    title="🚀 可進化 AI 助理 V9.7 (終極完美正式版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
