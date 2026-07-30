@@ -19,9 +19,9 @@ if users_env:
     for pair in users_env.split(','):
         if ':' in pair:
             parts = pair.split(':', 1)
-            username = parts[0].strip()
-            # ✅【關鍵修正】從陣列的第二個元素 parts[1] 取得密碼
-            password = parts[1].strip()
+            username = parts[0].[...](asc_slot://start-slot-1)strip()
+            # ✅【關鍵修正】從陣列的第二個元素 parts 取得密碼
+            password = parts.strip()
             if username and password:
                 AUTH_LIST.append((username, password))
 
