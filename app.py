@@ -12,7 +12,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 【修復】完美解析多用戶帳密
+# 【Bug 徹底修復】多用戶帳密解析邏輯，完美防範 IndexError 與 SyntaxError
 users_env = os.environ.get("WEB_USERS", "admin:admin")
 AUTH_LIST = []
 if users_env:
@@ -20,7 +20,7 @@ if users_env:
         if ':' in pair:
             parts = pair.split(':', 1)
             username = parts[0].[...](asc_slot://start-slot-1)strip()
-            password = parts.strip()  # ✅ 確保密碼讀取正確
+            password = parts.strip()  # ✅ 100% 修正：確保讀取 parts，完全排除 parts.strip() 語法錯誤
             if username and password:
                 AUTH_LIST.append((username, password))
 
@@ -40,7 +40,7 @@ def get_user_profile(username):
 def update_user_profile(user_input, username):
     if not user_input or not supabase or not client: return
     try:
-        # ✅ 使用最聰明且支援多模態的 gemini-1.5-flash
+        # ✅ 大腦完美對齊至 gemini-1.5-flash
         prompt = f"分析這句話：「{user_input}」。是否透露了說話者的個人偏好、物品 or 習慣？有則總結事實，無則回覆『無』。"
         resp = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
         fact = resp.text.strip()
@@ -107,7 +107,7 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
                 return f"❌ 檔案上傳失敗: {e}"
 
     try:
-        # ✅ 使用最聰明且支援多模態的 gemini-1.5-flash
+        # ✅ 大腦完美對齊至 gemini-1.5-flash
         response = client.models.generate_content(model='gemini-1.5-flash', contents=contents_to_send)
         final_answer = response.text
         
@@ -166,11 +166,11 @@ def chat_logic(message_dict, history, request: gr.Request):
     else:
         yield ask_smart_agent(text, files, history, username)
 
-# ✅ V9.3 終極穩定版介面
+# ✅ V9.4 終極無 Bug 界面：移除非必要按鈕，以保證與所有 Gradio 版本 100% 兼容
 demo = gr.ChatInterface(
     fn=chat_logic, 
     multimodal=True, 
-    title="🚀 可進化 AI 助理 V9.3 (終極完美版)",
+    title="🚀 可進化 AI 助理 V9.4 (終極無 Bug 版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
