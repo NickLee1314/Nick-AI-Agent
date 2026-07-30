@@ -21,7 +21,7 @@ if users_env:
             parts = pair.split(':', 1)
             if len(parts) == 2:
                 username = parts[0].[...](asc_slot://start-slot-1)strip()
-                password = parts.strip()  # ✅ 100% 修正：從 parts 讀取密碼，絕無語法錯誤
+                password = parts.strip()
                 if username and password:
                     AUTH_LIST.append((username, password))
 
@@ -41,7 +41,6 @@ def get_user_profile(username):
 def update_user_profile(user_input, username):
     if not user_input or not supabase or not client: return
     try:
-        # ✅ 使用最優模型 gemini-1.5-flash
         prompt = f"分析這句話：「{user_input}」。是否透露了說話者的個人偏好、物品 or 習慣？有則總結事實，無則回覆『無』。"
         resp = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
         fact = resp.text.strip()
@@ -108,7 +107,6 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
                 return f"❌ 檔案上傳失敗: {e}"
 
     try:
-        # ✅ 使用最優模型 gemini-1.5-flash
         response = client.models.generate_content(model='gemini-1.5-flash', contents=contents_to_send)
         final_answer = response.text
         
