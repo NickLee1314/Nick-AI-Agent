@@ -12,7 +12,6 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# ✅【V8.9 終極校對】此區塊已在本地端完整驗證語法正確
 users_env = os.environ.get("WEB_USERS", "admin:admin")
 AUTH_LIST = []
 if users_env:
@@ -20,11 +19,10 @@ if users_env:
         if ':' in pair:
             parts = pair.split(':', 1)
             username = parts[0].strip()
-            password = parts[1].strip()  #<-- 關鍵修正，確保從 parts[1] 讀取
+            password = parts[1].strip()
             if username and password:
                 AUTH_LIST.append((username, password))
 
-# 【防呆】確保金鑰存在才初始化
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
@@ -164,10 +162,11 @@ def chat_logic(message_dict, history, request: gr.Request):
     else:
         yield ask_smart_agent(text, files, history, username)
 
+# ✅【V9.0 Gradio 兼容修正】
 demo = gr.ChatInterface(
     fn=chat_logic,
     multimodal=True,
-    title="🚀 可進化 AI 助理 V8.9 (終極校對版)",
+    title="🚀 可進化 AI 助理 V9.0 (Gradio 兼容版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
@@ -175,9 +174,10 @@ demo = gr.ChatInterface(
         [{"text": "清除我的個人畫像"}],
         [{"text": "設定目標：2026年人工智慧發展趨勢"}]
     ],
-    clear_btn="🗑️ 建立新對話",
-    undo_btn="↩️ 復原上一句",
-    retry_btn="🔄 重新產生",
+    # 修正：將舊參數 clear_btn, undo_btn, retry_btn 改為新版寫法
+    clear_button="🗑️ 建立新對話",
+    undo_button="↩️ 復原上一句",
+    retry_button="🔄 重新產生",
 )
 
 # --- 5. 全自動背景排程 ---
