@@ -27,7 +27,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 # --- 2. 雲端資料庫操作 ---
-# (此區塊程式碼與 V8.9/V9.0 完全相同，保持不變)
 def get_user_profile(username):
     if not supabase: return "無"
     try:
@@ -39,8 +38,9 @@ def get_user_profile(username):
 def update_user_profile(user_input, username):
     if not user_input or not supabase or not client: return
     try:
+        # ✅【V9.2 模型兼容修正】
         prompt = f"分析這句話：「{user_input}」。是否透露了說話者的個人偏好、物品或習慣？有則總結事實，無則回覆『無』。"
-        resp = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+        resp = client.models.generate_content(model='gemini-pro', contents=prompt)
         fact = resp.text.strip()
         if fact != "無" and "沒有" not in fact and len(fact) > 2:
             supabase.table('user_profile').insert({"fact": fact, "username": username}).execute()
@@ -62,7 +62,6 @@ def search_the_web(query):
         return "網路上暫時無法搜尋。"
 
 # --- 3. 核心大腦邏輯 ---
-# (此區塊程式碼與 V8.9/V9.0 完全相同，保持不變)
 def ask_smart_agent(user_text, uploaded_files, history, username):
     if not client or not supabase:
         return "⚠️ 系統尚未設定完整的 API 金鑰 (GEMINI 或 SUPABASE)，請至 Settings 中設定。"
@@ -106,7 +105,8 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
                 return f"❌ 檔案上傳失敗: {e}"
 
     try:
-        response = client.models.generate_content(model='gemini-1.5-flash', contents=contents_to_send)
+        # ✅【V9.2 模型兼容修正】
+        response = client.models.generate_content(model='gemini-pro', contents=contents_to_send)
         final_answer = response.text
 
         db_question = user_text if user_text else "[分析了上傳的檔案]"
@@ -164,11 +164,10 @@ def chat_logic(message_dict, history, request: gr.Request):
     else:
         yield ask_smart_agent(text, files, history, username)
 
-# ✅【V9.1 終極修正】移除所有具爭議的按鈕參數，確保 100% 啟動成功
 demo = gr.ChatInterface(
     fn=chat_logic,
     multimodal=True,
-    title="🚀 可進化 AI 助理 V9.1 (終極穩定版)",
+    title="🚀 可進化 AI 助理 V9.2 (最終兼容版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
@@ -179,7 +178,6 @@ demo = gr.ChatInterface(
 )
 
 # --- 5. 全自動背景排程 ---
-# (此區塊程式碼與 V8.9/V9.0 完全相同，保持不變)
 def daily_background_learning():
     print("⏰ [定時任務] 啟動每日全自動自主學習...")
     if not supabase or not client: return
@@ -210,4 +208,3 @@ if __name__ == "__main__":
         demo.launch(server_name="0.0.0.0", server_port=port, auth=AUTH_LIST)
     else:
         demo.launch(server_name="0.0.0.0", server_port=port)
-
