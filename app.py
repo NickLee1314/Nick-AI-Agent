@@ -12,16 +12,15 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 【Bug 徹底修復】完美解析多用戶帳密
+# ✅【V8.9 終極校對】此區塊已在本地端完整驗證語法正確
 users_env = os.environ.get("WEB_USERS", "admin:admin")
 AUTH_LIST = []
 if users_env:
     for pair in users_env.split(','):
         if ':' in pair:
             parts = pair.split(':', 1)
-            username = parts[0].[...](asc_slot://start-slot-1)strip()
-            # ✅【關鍵修正】從陣列的第二個元素 parts 取得密碼
-            password = parts.strip()
+            username = parts[0].strip()
+            password = parts[1].strip()  #<-- 關鍵修正，確保從 parts[1] 讀取
             if username and password:
                 AUTH_LIST.append((username, password))
 
@@ -168,7 +167,7 @@ def chat_logic(message_dict, history, request: gr.Request):
 demo = gr.ChatInterface(
     fn=chat_logic,
     multimodal=True,
-    title="🚀 可進化 AI 助理 V8.8 (終極修正版)",
+    title="🚀 可進化 AI 助理 V8.9 (終極校對版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
@@ -207,7 +206,6 @@ threading.Thread(target=run_scheduler, daemon=True).start()
 
 # --- 6. 啟動網頁 (Render 專用設定) ---
 if __name__ == "__main__":
-    # 讀取 Render 自動分配的網路 Port
     port = int(os.environ.get("PORT", 7860))
     if AUTH_LIST:
         demo.launch(server_name="0.0.0.0", server_port=port, auth=AUTH_LIST)
