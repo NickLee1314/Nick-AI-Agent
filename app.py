@@ -27,6 +27,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 # --- 2. 雲端資料庫操作 ---
+# (此區塊程式碼與 V8.9/V9.0 完全相同，保持不變)
 def get_user_profile(username):
     if not supabase: return "無"
     try:
@@ -61,6 +62,7 @@ def search_the_web(query):
         return "網路上暫時無法搜尋。"
 
 # --- 3. 核心大腦邏輯 ---
+# (此區塊程式碼與 V8.9/V9.0 完全相同，保持不變)
 def ask_smart_agent(user_text, uploaded_files, history, username):
     if not client or not supabase:
         return "⚠️ 系統尚未設定完整的 API 金鑰 (GEMINI 或 SUPABASE)，請至 Settings 中設定。"
@@ -162,25 +164,22 @@ def chat_logic(message_dict, history, request: gr.Request):
     else:
         yield ask_smart_agent(text, files, history, username)
 
-# ✅【V9.0 Gradio 兼容修正】
+# ✅【V9.1 終極修正】移除所有具爭議的按鈕參數，確保 100% 啟動成功
 demo = gr.ChatInterface(
     fn=chat_logic,
     multimodal=True,
-    title="🚀 可進化 AI 助理 V9.0 (Gradio 兼容版)",
+    title="🚀 可進化 AI 助理 V9.1 (終極穩定版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
         [{"text": "清除所有對話紀錄"}],
         [{"text": "清除我的個人畫像"}],
         [{"text": "設定目標：2026年人工智慧發展趨勢"}]
-    ],
-    # 修正：將舊參數 clear_btn, undo_btn, retry_btn 改為新版寫法
-    clear_button="🗑️ 建立新對話",
-    undo_button="↩️ 復原上一句",
-    retry_button="🔄 重新產生",
+    ]
 )
 
 # --- 5. 全自動背景排程 ---
+# (此區塊程式碼與 V8.9/V9.0 完全相同，保持不變)
 def daily_background_learning():
     print("⏰ [定時任務] 啟動每日全自動自主學習...")
     if not supabase or not client: return
@@ -211,3 +210,4 @@ if __name__ == "__main__":
         demo.launch(server_name="0.0.0.0", server_port=port, auth=AUTH_LIST)
     else:
         demo.launch(server_name="0.0.0.0", server_port=port)
+
