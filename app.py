@@ -12,19 +12,19 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 【修復】完美解析多用戶帳密
+# 【Bug 徹底修復】完美解析多用戶帳密
 users_env = os.environ.get("WEB_USERS", "admin:admin")
 AUTH_LIST = []
 if users_env:
     for pair in users_env.split(','):
         if ':' in pair:
             parts = pair.split(':', 1)
-            username = parts[0].[...](asc_slot://start-slot-5)strip()
-            password = parts.strip()  # ✅ 已修正：正確讀取陣列第二個元素
+            username = parts[0].[...](asc_slot://start-slot-3)strip()
+            password = parts.strip()  # ✅ 已修正：正確讀取密碼陣列
             if username and password:
                 AUTH_LIST.append((username, password))
 
-# 【防呆】確保金鑰存在才初始化，否則設為 None 避免啟動崩潰
+# 【防呆】確保金鑰存在才初始化
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
@@ -67,7 +67,6 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
     if not client or not supabase:
         return "⚠️ 系統尚未設定完整的 API 金鑰 (GEMINI 或 SUPABASE)，請至 Settings 中設定。"
 
-    # 解析短期對話歷史
     short_term = ""
     for user_msg, ai_msg in history[-3:]:
         if isinstance(user_msg, tuple):
@@ -94,7 +93,6 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
     contents_to_send = [prompt]
     uploaded_g_files = [] 
     
-    # 處理上傳檔案
     if uploaded_files:
         for filepath in uploaded_files:
             file_size_mb = os.path.getsize(filepath) / (1024 * 1024)
@@ -107,7 +105,6 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
             except Exception as e:
                 return f"❌ 檔案上傳失敗: {e}"
 
-    # 呼叫 AI 與存檔
     try:
         response = client.models.generate_content(model='gemini-1.5-flash', contents=contents_to_send)
         final_answer = response.text
@@ -122,7 +119,6 @@ def ask_smart_agent(user_text, uploaded_files, history, username):
         return f"⚠️ AI 大腦暫時無法思考 (可能為安全攔截或 API 限制)：{str(e)}"
         
     finally:
-        # 強制資源回收
         for gf in uploaded_g_files:
             try:
                 client.files.delete(name=gf.name)
@@ -171,7 +167,7 @@ def chat_logic(message_dict, history, request: gr.Request):
 demo = gr.ChatInterface(
     fn=chat_logic, 
     multimodal=True, 
-    title="🚀 可進化 AI 助理 V8.7 (絕對穩定版)",
+    title="🚀 可進化 AI 助理 V8.8 (終極修正版)",
     description="具備多用戶隔離、防護罩、垃圾回收與零死角除錯的頂級架構。<br>👇 **請手動輸入，或點擊下方的【快捷指令按鈕】：**",
     examples=[
         [{"text": "自主學習"}],
@@ -208,9 +204,11 @@ def run_scheduler():
 
 threading.Thread(target=run_scheduler, daemon=True).start()
 
-# --- 6. 啟動網頁 ---
+# --- 6. 啟動網頁 (Render 專用設定) ---
 if __name__ == "__main__":
+    # 讀取 Render 自動分配的網路 Port
+    port = int(os.environ.get("PORT", 7860))
     if AUTH_LIST:
-        demo.launch(auth=AUTH_LIST)
+        demo.launch(server_name="0.0.0.0", server_port=port, auth=AUTH_LIST)
     else:
-        demo.launch()
+        demo.launch(server_name="0.0.0.0", server_port=port)
